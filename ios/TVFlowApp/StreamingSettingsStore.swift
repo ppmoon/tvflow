@@ -18,18 +18,15 @@ final class StreamingSettingsStore: ObservableObject {
     self.savedConfiguration = try? StreamingConfiguration(rawURL: persistedURL)
   }
 
-    @discardableResult
-    func save() -> Bool {
-        do {
-            let configuration = try StreamingConfiguration(rawURL: rtmpURL)
-            defaults?.set(configuration.sanitizedURLString, forKey: TVFlowShared.rtmpURLDefaultsKey)
-            rtmpURL = configuration.sanitizedURLString
-            savedConfiguration = configuration
-            statusMessage = "已保存：\(configuration.sanitizedURLString)"
-            return true
-        } catch {
-            statusMessage = error.localizedDescription
-            return false
-        }
+  func saveConfiguration() {
+    do {
+      let configuration = try StreamingConfiguration(rawURL: rtmpURL)
+      defaults?.set(configuration.sanitizedURLString, forKey: TVFlowShared.rtmpURLDefaultsKey)
+      rtmpURL = configuration.sanitizedURLString
+      savedConfiguration = configuration
+      statusMessage = "已保存：\(configuration.sanitizedURLString)"
+    } catch {
+      statusMessage = error.localizedDescription
     }
+  }
 }

@@ -14,7 +14,7 @@ struct ContentView: View {
         .autocorrectionDisabled(true)
 
         Button("保存配置") {
-          _ = settingsStore.save()
+          settingsStore.saveConfiguration()
         }
         .buttonStyle(.borderedProminent)
 

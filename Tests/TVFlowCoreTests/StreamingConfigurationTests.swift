@@ -30,3 +30,9 @@ import Testing
     try StreamingConfiguration(rawURL: "rtmp://media.example.com/live")
   }
 }
+
+@Test func rejectsMissingScheme() {
+  #expect(throws: StreamingConfigurationError.unsupportedScheme("missing")) {
+    try StreamingConfiguration(rawURL: "media.example.com/live/ios-demo")
+  }
+}

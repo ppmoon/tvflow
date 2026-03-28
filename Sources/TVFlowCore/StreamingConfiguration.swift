@@ -46,7 +46,7 @@ public struct StreamingConfiguration: Equatable, Sendable {
 
   public init(url: URL) throws {
     guard let scheme = url.scheme?.lowercased(), ["rtmp", "rtmps"].contains(scheme) else {
-      throw StreamingConfigurationError.unsupportedScheme(url.scheme?.lowercased() ?? "")
+      throw StreamingConfigurationError.unsupportedScheme(url.scheme?.lowercased() ?? "missing")
     }
     guard let host = url.host, !host.isEmpty else {
       throw StreamingConfigurationError.missingHost

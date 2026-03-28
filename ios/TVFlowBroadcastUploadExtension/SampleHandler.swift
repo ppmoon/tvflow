@@ -5,7 +5,7 @@ import ReplayKit
 import TVFlowCore
 import VideoToolbox
 
-final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
+final class SampleHandler: RPBroadcastSampleHandler {
   private enum BroadcastError: LocalizedError {
     case missingConfiguration
 
@@ -18,6 +18,7 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
   }
 
   private let mixer = MediaMixer(captureSessionMode: .manual)
+  private let stateLock = NSLock()
   private var session: Session?
   private var needsVideoConfiguration = true
 
@@ -33,7 +34,10 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
       do {
         let configuration = try Self.loadConfiguration()
         let builtSession = try await SessionBuilderFactory.shared.make(configuration.url).build()
-        session = builtSession
+        withStateLock {
+          session = builtSession
+          needsVideoConfiguration = true
+        }
 
         var videoSettings = await mixer.videoMixerSettings
         videoSettings.mode = .passthrough
@@ -52,8 +56,10 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
   override func broadcastFinished() {
     Task {
       await mixer.stopRunning()
-      session = nil
-      needsVideoConfiguration = true
+      withStateLock {
+        session = nil
+        needsVideoConfiguration = true
+      }
     }
   }
 
@@ -83,14 +89,18 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
   }
 
   private func configureVideoIfNeeded(using sampleBuffer: CMSampleBuffer) async throws {
-    guard needsVideoConfiguration, let dimensions = sampleBuffer.formatDescription?.dimensions
-    else {
+    guard let dimensions = sampleBuffer.formatDescription?.dimensions else {
       return
     }
-    guard let session else {
+    guard let session = withStateLock(body: { () -> Session? in
+      guard needsVideoConfiguration else {
+        return nil
+      }
+      needsVideoConfiguration = false
+      return session
+    }) else {
       return
     }
-    needsVideoConfiguration = false
 
     var videoSettings = await session.stream.videoSettings
     videoSettings.videoSize = CGSize(
@@ -117,5 +127,11 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
     return NSError(
       domain: "ppmoon.tvflow.broadcast", code: 1,
       userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+  }
+
+  private func withStateLock<T>(body: () -> T) -> T {
+    stateLock.lock()
+    defer { stateLock.unlock() }
+    return body()
   }
 }

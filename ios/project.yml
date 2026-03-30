@@ -1,0 +1,64 @@
+name: TVFlow
+options:
+  bundleIdPrefix: ppmoon
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  TVFlowCore:
+    path: ..
+  HaishinKit:
+    url: https://github.com/HaishinKit/HaishinKit.swift
+    from: 2.2.4
+targets:
+  TVFlow:
+    type: application
+    platform: iOS
+    sources:
+      - path: TVFlowApp
+    info:
+      path: TVFlowApp/Info.plist
+    entitlements:
+      path: TVFlowApp/TVFlow.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ppmoon.tvflow
+        PRODUCT_NAME: TVFlow
+        SWIFT_VERSION: 6.0
+        SWIFT_STRICT_CONCURRENCY: minimal
+        TARGETED_DEVICE_FAMILY: 1,2
+    dependencies:
+      - sdk: ReplayKit.framework
+      - package: TVFlowCore
+        product: TVFlowCore
+      - target: TVFlowBroadcastUploadExtension
+        embed: true
+  TVFlowBroadcastUploadExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TVFlowBroadcastUploadExtension
+    info:
+      path: TVFlowBroadcastUploadExtension/Info.plist
+    entitlements:
+      path: TVFlowBroadcastUploadExtension/TVFlowBroadcastUploadExtension.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ppmoon.tvflow.broadcast
+        PRODUCT_NAME: TVFlowBroadcastUploadExtension
+        SWIFT_VERSION: 6.0
+        SWIFT_STRICT_CONCURRENCY: minimal
+    dependencies:
+      - sdk: ReplayKit.framework
+      - sdk: VideoToolbox.framework
+      - package: TVFlowCore
+        product: TVFlowCore
+      - package: HaishinKit
+        product: HaishinKit
+      - package: HaishinKit
+        product: RTMPHaishinKit
+schemes:
+  TVFlow:
+    build:
+      targets:
+        TVFlow: all
+        TVFlowBroadcastUploadExtension: all
